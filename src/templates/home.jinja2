@@ -1,0 +1,21 @@
+{% extends "base.jinja2" %}
+{% block content %}
+    <div class="jumbotron">
+        <h1>inMarket Analytics Web App</h1>
+        <p>Parse a Google Spreadsheet into some graphical plots.<br> The Spreadsheet needs to follow the following conditions:</p>
+            <ul>-The Stores Visited and Age Range tables need to have valid and complete data with the appropriate columns. .</ul>
+            <ul>-Two named ranges with accurately accompanied data with the correct columns: 'Stores_Visited' and 'Age_Range'(e.g. Stores_Visited as a Namedrange specifying the range A5:D58)</ul>
+            <ul>Make sure the Spreadsheet sharing is set to "anyone can edit".</ul>
+        <div class="form-size">
+        <form action="{{ url_for('plots.create_plots') }}"  method="post">
+            <div class="form-group">
+                <label for="url">Google Sheets URL</label>
+                <input type="text" class="form-control" id="url" name="url" placeholder="Google Sheets URL"
+            </div>
+            <button type="submit" class="btn btn-success">Submit</button>
+        </form>
+        </div>
+
+    </div>
+
+{% endblock %}

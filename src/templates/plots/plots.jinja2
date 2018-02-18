@@ -1,0 +1,20 @@
+{% extends "base.jinja2" %}
+{% block content %}
+    <div class="page-header">
+        <h1>Generated Plots</h1>
+    </div>
+
+    <div class="container" align="center">
+        <embed type="image/svg+xml" src={{age_graph|safe}} style="max-width:700px"/>
+    </div>
+
+    <div class="container" align="center">
+        <embed type="image/svg+xml" src={{category_graph|safe}} style="max-width:700px"/>
+    </div>
+    <div class="container" align="center">
+        <embed type="image/svg+xml" src={{store_graph | safe}} style="max-width:700px"/>
+    </div>
+    {% for df in data %}
+        {{ df.to_html(classes="table table-striped") | safe }}
+    {% endfor %}
+{% endblock %}
