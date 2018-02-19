@@ -24,6 +24,9 @@ SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 
+current_file_directory = os.path.dirname(__file__)
+
+client_secret_file_path = os.path.join(current_file_directory,CLIENT_SECRET_FILE)
 
 def get_credentials():
     """Gets valid user credentials from storage.
@@ -44,7 +47,7 @@ def get_credentials():
     store = Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        flow = client.flow_from_clientsecrets(client_secret_file_path, SCOPES)
         flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
