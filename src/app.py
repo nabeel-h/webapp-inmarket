@@ -4,8 +4,6 @@ from flask import Flask, render_template
 
 import pygal
 
-
-
 app = Flask(__name__)
 app.config.from_object('src.config')
 app.secret_key = "123"
@@ -14,6 +12,7 @@ app.secret_key = "123"
 def home():
     return render_template("home.jinja2")
 
+"""
 @app.route('/pygalexample')
 def pygalexample():
     try:
@@ -29,7 +28,7 @@ def pygalexample():
         return render_template("graphing.html", graph_data=graph_data)
     except Exception as e:
         return (str(e))
-
+"""
 
 
 

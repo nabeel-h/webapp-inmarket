@@ -10,3 +10,7 @@
     -moz-border-radius: 5px;
     border-radius: 5px;
 }
+
+div.insight-spacing {
+    padding-bottom: 75px;
+}

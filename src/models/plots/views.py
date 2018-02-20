@@ -4,7 +4,7 @@ import pygal
 from pygal.style import DarkStyle
 from openpyxl import load_workbook
 
-from src.models.sheets.analysis import get_spreadsheetID, return_prepped_dfs_from_gsheets, return_prepped_dfs_from_excel
+from src.models.sheets.analysis import get_spreadsheetID, return_prepped_dfs_from_gsheets, return_prepped_dfs_from_excel, potential_sales_df
 import src.models.sheets.errors as SheetErrors
 
 __author__ = "nblhn"
@@ -24,11 +24,17 @@ def create_gplots():
             # Checks if Named ranges exist in the Spreadsheet
             try:
                 x = return_prepped_dfs_from_gsheets(spreadsheetID)
-                age_graph = create_age_plot(x[0])
-                category_graph = create_category_plot(x[1])
-                store_graph = create_stores_plot(x[2])
+                ages_df = x[0]
+                chain_df = x[1]
+                stores_df = x[2]
+                age_graph = create_age_plot(ages_df)
+                category_graph = create_category_plot(chain_df)
+                store_graph = create_stores_plot(stores_df)
+                potential_sales = potential_sales_df(stores_df, chain_df)
+                total_potential_customers = potential_sales["Potential Additional Customers"].sum()
 
-                return render_template('plots/plots.jinja2', data=x, age_graph=age_graph, category_graph=category_graph, store_graph=store_graph)
+                return render_template('plots/plots.jinja2', chain_df=chain_df, stores_df=stores_df, ages_df=ages_df, age_graph=age_graph, category_graph=category_graph,
+                                       store_graph=store_graph, potential_sales=potential_sales, total_potential_customers=total_potential_customers)
 
             except SheetErrors.SheetErrors as e:
                 flash(e.message + ". Please recheck the Spreadsheet and make sure your tables have the appropriate Named ranges and try again!")
@@ -50,20 +56,26 @@ def create_eplots():
             flash('No selected file.')
             return redirect(request.url)
         if file and allowed_file(file.filename):
-            #filename = secure_filename(file.filename)
+            filename = "for file " + secure_filename(file.filename)
             wb = load_workbook(file)
-
+            print(type(wb))
             try:
                 x = return_prepped_dfs_from_excel(wb)
-                age_graph = create_age_plot(x[0])
-                category_graph = create_category_plot(x[1])
-                store_graph = create_stores_plot(x[2])
+                ages_df = x[0]
+                chain_df = x[1]
+                stores_df = x[2]
+                age_graph = create_age_plot(ages_df)
+                category_graph = create_category_plot(chain_df)
+                store_graph = create_stores_plot(stores_df)
+                potential_sales = potential_sales_df(stores_df, chain_df)
 
-                return render_template('plots/plots.jinja2', data=x, age_graph=age_graph, category_graph=category_graph,
-                                       store_graph=store_graph)
-
+                return render_template('plots/plots.jinja2', chain_df=chain_df, stores_df=stores_df, ages_df=ages_df, age_graph=age_graph, category_graph=category_graph,
+                                       store_graph=store_graph, filename=filename, potential_sales=potential_sales, total_potential_customers=total_potential_customers)
             except Exception as e:
-                flash(str(e))
+                if 'None' in str(e):
+                    flash('Please make sure to convert any tables into ranges!')
+                else:
+                    flash(str(e))
                 return render_template("home.jinja2")
 
         return render_template("home.jinja2")

@@ -110,6 +110,7 @@ def return_prepped_dfs_from_excel(wb):
         raise e
 
     age_cells = named_range_to_list(age_range.destinations, wb)
+
     stores_cells = named_range_to_list(stores_range.destinations, wb)
 
     stores_df = excel_cells_to_df(stores_cells)
@@ -118,6 +119,7 @@ def return_prepped_dfs_from_excel(wb):
     add_basic_cols(ages_df)
     add_basic_cols(stores_df)
 
+
     chain_df = store_chain_summary_df(stores_df)
     ages_df.set_index('Age range', inplace=True)
     stores_df.set_index('Chain', inplace=True)
@@ -125,16 +127,17 @@ def return_prepped_dfs_from_excel(wb):
     return [ages_df, chain_df, stores_df]
 
 
-
-
-def named_range_to_list(excel_dest,wb):
+def named_range_to_list(excel_dest, wb):
 
     excel_cells = []
     value_cells = []
+
     if excel_dest is not None:
+
         for title, coord in excel_dest:
             ws = wb[title]
             excel_cells.append(ws[coord])
+
 
         for lines in excel_cells:
             for row in lines:
@@ -142,10 +145,67 @@ def named_range_to_list(excel_dest,wb):
                 for cell in row:
                     row_list.append(cell.value)
                 value_cells.append(row_list)
-
-
         return value_cells
+
     return None
 
 def excel_cells_to_df(list_cell_lists):
     return pd.DataFrame(list_cell_lists[1:],columns=list_cell_lists[0])
+
+
+def potential_sales_df(stores_df, chain_df):
+    """
+    Look at each Category and collect Categories that have at least more than 10 stores.
+        'Chain Category', 10% of Total # of Stores
+
+    Look at Stores sorted by each Chain Category and look at the top 10% of them (rounded).
+    Iterate through each of those and check their Customer_Buy_% with their categories average.
+    If their Buy_% is lower then find the difference and multiply their 'Total Customers' by that % difference.
+
+
+    :param stores_df:
+    :param chain_df:
+    :return:
+    """
+
+    store_rows = []
+
+    # Retrieve Categories that have at least above a count of 10 stores.
+    Cats_Stores_Above_10 = []
+    for index, row in chain_df[chain_df['Total # of Stores'] > 9].iterrows():
+        Cats_Stores_Above_10.append([index, int(round(row['Total # of Stores'] / 10))])
+
+    # Loop through each category to get underperforms in terms of the Customer Buy % mean within their category
+    # who are also top 10 % in sales.
+    for category in Cats_Stores_Above_10:
+        chain_category = category[0]
+        num_stores = category[1]
+        top_sellers_in_Cat = stores_df[stores_df['Chain Category'] == chain_category].sort_values('% of Total Sales',
+                                                                                                  ascending=False).head(
+            num_stores).reset_index()
+
+        # Loop through stores with top 10% in sales and check their Customer Buy % with their Category Mean
+
+        for index, row in top_sellers_in_Cat.iterrows():
+            row_dict = {}
+            category_buy_average = chain_df.loc[row['Chain Category']]['Customer_Buy_%']
+            store_buy_average = row['Customer_Buy_%']
+            if store_buy_average < category_buy_average:
+                value_below_average = round(category_buy_average - store_buy_average, 3)
+                potential_additional_sales = round(value_below_average * row['Total Customers'])
+
+                row_dict['Chain'] = row['Chain']
+                row_dict['Inter-Category Rank'] = index + 1
+                row_dict['% Below Category Buy Average'] = value_below_average
+                row_dict['Potential Additional Customers'] = potential_additional_sales
+                row_dict['Chain Category'] = chain_category
+
+            # If store had a below average buy % then append
+            if len(row_dict) > 0:
+                store_rows.append(row_dict)
+
+    # If there is at least one store in the top 10% of sales that also is under the categories mean buy % then add
+    if len(store_rows) > 0:
+        pot_df = pd.DataFrame(store_rows).set_index('Chain')
+
+    return pot_df
