@@ -68,6 +68,7 @@ def create_eplots():
                 category_graph = create_category_plot(chain_df)
                 store_graph = create_stores_plot(stores_df)
                 potential_sales = potential_sales_df(stores_df, chain_df)
+                total_potential_customers = potential_sales["Potential Additional Customers"].sum()
 
                 return render_template('plots/plots.jinja2', chain_df=chain_df, stores_df=stores_df, ages_df=ages_df, age_graph=age_graph, category_graph=category_graph,
                                        store_graph=store_graph, filename=filename, potential_sales=potential_sales, total_potential_customers=total_potential_customers)
