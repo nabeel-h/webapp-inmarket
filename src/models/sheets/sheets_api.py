@@ -7,6 +7,8 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+from oauth2l import service_account
+
 import src.models.sheets.errors as SheetErrors
 
 __author__ = "nblhn"
@@ -27,6 +29,13 @@ APPLICATION_NAME = 'Google Sheets API Python Quickstart'
 current_file_directory = os.path.dirname(__file__)
 
 client_secret_file_path = os.path.join(current_file_directory,CLIENT_SECRET_FILE)
+
+def get_service_credentials():
+    credentials = service_account.Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+    return credentials
+
 
 def get_credentials():
     """Gets valid user credentials from storage.

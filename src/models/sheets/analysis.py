@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 
+
 from src.models.sheets.sheets_api import get_range_values
 from src.models.sheets.constants import AGE_RANGE_NAME, STORES_RANGE_NAME
 import src.models.sheets.errors as SheetErrors
@@ -36,13 +37,16 @@ def create_total_customers(df):
     df['Total Customers'] = (df['Non-Customers'] + df['Customers'])
     return None
 
+
 def create_total_pct_of_pop(df):
     df['% of Total Population'] = round((df['Non-Customers'] + df['Customers']) / df['Total Customers'].sum(),4)
     return None
 
+
 def create_pct_total_sales(df):
     df['% of Total Sales'] = round(df['Customers'] / df['Customers'].sum(),4)
     return None
+
 
 def add_basic_cols(df):
     create_customer_buy_pct(df)
@@ -50,6 +54,7 @@ def add_basic_cols(df):
     create_total_pct_of_pop(df)
     create_pct_total_sales(df)
     return None
+
 
 def store_chain_summary_df(df):
     alt_stores = pd.DataFrame(df)
@@ -69,7 +74,7 @@ def store_chain_summary_df(df):
     return agg_type
 
 
-def return_prepped_dfs(spreadsheetId):
+def return_prepped_dfs_from_gsheets(spreadsheetId):
     """
 
     :param spreadsheetId: string for specific Google Spreadsheet
@@ -91,7 +96,56 @@ def return_prepped_dfs(spreadsheetId):
     ages_df.set_index('Age range', inplace=True)
     stores_df.set_index('Chain', inplace=True)
 
+    return [ages_df, chain_df, stores_df]
+
+
+def return_prepped_dfs_from_excel(wb):
+
+    try:
+        age_range = wb.defined_names[AGE_RANGE_NAME]
+
+        stores_range = wb.defined_names[STORES_RANGE_NAME]
+
+    except Exception as e:
+        raise e
+
+    age_cells = named_range_to_list(age_range.destinations, wb)
+    stores_cells = named_range_to_list(stores_range.destinations, wb)
+
+    stores_df = excel_cells_to_df(stores_cells)
+    ages_df = excel_cells_to_df(age_cells)
+
+    add_basic_cols(ages_df)
+    add_basic_cols(stores_df)
+
+    chain_df = store_chain_summary_df(stores_df)
+    ages_df.set_index('Age range', inplace=True)
+    stores_df.set_index('Chain', inplace=True)
 
     return [ages_df, chain_df, stores_df]
 
 
+
+
+def named_range_to_list(excel_dest,wb):
+
+    excel_cells = []
+    value_cells = []
+    if excel_dest is not None:
+        for title, coord in excel_dest:
+            ws = wb[title]
+            excel_cells.append(ws[coord])
+
+        for lines in excel_cells:
+            for row in lines:
+                row_list = []
+                for cell in row:
+                    row_list.append(cell.value)
+                value_cells.append(row_list)
+
+
+        return value_cells
+    return None
+
+def excel_cells_to_df(list_cell_lists):
+    return pd.DataFrame(list_cell_lists[1:],columns=list_cell_lists[0])

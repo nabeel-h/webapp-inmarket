@@ -3,7 +3,7 @@ __author__ = "nblhn"
 from flask import Flask, render_template
 
 import pygal
-from src.models.sheets.analysis import return_prepped_dfs
+
 
 
 app = Flask(__name__)
@@ -17,7 +17,6 @@ def home():
 @app.route('/pygalexample')
 def pygalexample():
     try:
-
         graph = pygal.XY(stroke=False, x_title='Customer Buy %', y_title='% of Total Sales')
         graph.title = 'Store Graph'
         graph.add('Drinking Stores', [

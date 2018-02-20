@@ -2,17 +2,24 @@
 {% block content %}
     <div class="jumbotron">
         <h1>inMarket Analytics Web App</h1>
-        <p>Parse a Google Spreadsheet into some graphical plots.<br> The Spreadsheet needs to follow the following conditions:</p>
-            <ul>-The Stores Visited and Age Range tables need to have valid and complete data with the appropriate columns. .</ul>
-            <ul>-Two named ranges with accurately accompanied data with the correct columns: 'Stores_Visited' and 'Age_Range'(e.g. Stores_Visited as a Namedrange specifying the range A5:D58)</ul>
-            <ul>Make sure the Spreadsheet sharing is set to "anyone can edit".</ul>
+        <p>Parse a Google Spreadsheet or XLSX file and generate Data Insights.<br> The Spreadsheet needs to adhere to the following conditions or an error will be produced and you will asked to resubmit:</p>
+            <ul>-The Stores Visited and Age Range tables need to have valid and complete data with the appropriate expected columns.</ul>
+            <ul>-Two named ranges valid Named Ranges need to be present: 'Stores_Visited' and 'Age_Range'(e.g. Stores_Visited as a Namedrange specifying the range A5:D58)</ul>
+            <ul>If google sheets make sure the Spreadsheet sharing is set to "anyone can edit".</ul>
         <div class="form-size">
-        <form action="{{ url_for('plots.create_plots') }}"  method="post">
+        <form action="{{ url_for('plots.create_gplots') }}"  method="post">
             <div class="form-group">
                 <label for="url">Google Sheets URL</label>
                 <input type="text" class="form-control" id="url" name="url" placeholder="Google Sheets URL"
             </div>
             <button type="submit" class="btn btn-success">Submit</button>
+        </form>
+        </div>
+        <div>
+        <p>Or upload an Excel file:</p>
+        <form action="{{ url_for('plots.create_eplots') }}" method=post enctype=multipart/form-data>
+          <p><input type=file name=file>
+             <input type=submit value=Upload>
         </form>
         </div>
 

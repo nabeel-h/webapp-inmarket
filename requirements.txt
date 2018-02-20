@@ -4,3 +4,5 @@ numpy==1.14.0
 flask==0.12.2
 pygal==2.4.0
 uwsgi
+google-oauth2l
+openpyxl==2.5.0

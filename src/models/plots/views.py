@@ -1,17 +1,20 @@
 from flask import Blueprint, request, render_template, flash
-from werkzeug.utils import redirect
+from werkzeug.utils import redirect, secure_filename
 import pygal
 from pygal.style import DarkStyle
+from openpyxl import load_workbook
 
-from src.models.sheets.analysis import get_spreadsheetID, return_prepped_dfs
+from src.models.sheets.analysis import get_spreadsheetID, return_prepped_dfs_from_gsheets, return_prepped_dfs_from_excel
 import src.models.sheets.errors as SheetErrors
 
 __author__ = "nblhn"
 
 plot_blueprint = Blueprint('plots', __name__)
 
-@plot_blueprint.route('/plots', methods=['POST', 'GET'])
-def create_plots():
+ALLOWED_EXTENSIONS = set(['xlsx'])
+
+@plot_blueprint.route('/g_plots', methods=['POST', 'GET'])
+def create_gplots():
     if request.method == 'POST':
         spreadsheet_url = request.form['url']
 
@@ -20,7 +23,7 @@ def create_plots():
         if spreadsheetID:
             # Checks if Named ranges exist in the Spreadsheet
             try:
-                x = return_prepped_dfs(spreadsheetID)
+                x = return_prepped_dfs_from_gsheets(spreadsheetID)
                 age_graph = create_age_plot(x[0])
                 category_graph = create_category_plot(x[1])
                 store_graph = create_stores_plot(x[2])
@@ -34,6 +37,43 @@ def create_plots():
         flash(u'Your URL was not a valid Sheets Spreadsheet URL. Please try again.', 'error')
         return redirect("/")
     return render_template("home.jinja2")
+
+@plot_blueprint.route('/e_plots', methods=['POST','GET'])
+def create_eplots():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part.')
+            return redirect(request.url)
+        file = request.files['file']
+
+        if file.filename == '':
+            flash('No selected file.')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            #filename = secure_filename(file.filename)
+            wb = load_workbook(file)
+
+            try:
+                x = return_prepped_dfs_from_excel(wb)
+                age_graph = create_age_plot(x[0])
+                category_graph = create_category_plot(x[1])
+                store_graph = create_stores_plot(x[2])
+
+                return render_template('plots/plots.jinja2', data=x, age_graph=age_graph, category_graph=category_graph,
+                                       store_graph=store_graph)
+
+            except Exception as e:
+                flash(str(e))
+                return render_template("home.jinja2")
+
+        return render_template("home.jinja2")
+
+    return render_template("home.jinja2")
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def create_age_plot(ages_df):
