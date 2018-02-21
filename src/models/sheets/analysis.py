@@ -1,5 +1,7 @@
 import pandas as pd
 import re
+import json
+import os
 
 
 from src.models.sheets.sheets_api import get_range_values
@@ -34,17 +36,21 @@ def create_customer_buy_pct(df):
     return None
 
 def create_total_customers(df):
-    df['Total Customers'] = (df['Non-Customers'] + df['Customers'])
+    df['Total Foot Traffic'] = (df['Non-Customers'] + df['Customers'])
     return None
 
 
 def create_total_pct_of_pop(df):
-    df['% of Total Population'] = round((df['Non-Customers'] + df['Customers']) / df['Total Customers'].sum(),4)
+    df['% of Total Foot Traffic'] = round((df['Non-Customers'] + df['Customers']) / df['Total Foot Traffic'].sum(),4)
     return None
 
 
 def create_pct_total_sales(df):
     df['% of Total Sales'] = round(df['Customers'] / df['Customers'].sum(),4)
+    return None
+
+def create_traffic_score(df, total_population):
+    df['Traffic Score'] = round((df['Total Foot Traffic'] / total_population), 3)
     return None
 
 
@@ -70,7 +76,6 @@ def store_chain_summary_df(df):
     agg_type['Customer_Buy_%'] = round(agg_type['Customer_Buy_%'],4)
     agg_type['Average # of Sales per Store'] = round(agg_type['Average # of Sales per Store'],0)
 
-
     return agg_type
 
 
@@ -92,11 +97,18 @@ def return_prepped_dfs_from_gsheets(spreadsheetId):
     add_basic_cols(ages_df)
     add_basic_cols(stores_df)
 
+    total_population = ages_df['Total Foot Traffic'].sum()
+    # adding Traffic Score to stores_df
+    create_traffic_score(stores_df, total_population)
+
     chain_df = store_chain_summary_df(stores_df)
     ages_df.set_index('Age range', inplace=True)
+    eating_places_df = create_eating_places_df(stores_df)
     stores_df.set_index('Chain', inplace=True)
+    restaurant_type_df = restaurant_type_summary_df(eating_places_df)
+    eating_places_df.set_index("Chain", inplace=True)
 
-    return [ages_df, chain_df, stores_df]
+    return [ages_df, chain_df, stores_df, eating_places_df, restaurant_type_df]
 
 
 def return_prepped_dfs_from_excel(wb):
@@ -119,12 +131,18 @@ def return_prepped_dfs_from_excel(wb):
     add_basic_cols(ages_df)
     add_basic_cols(stores_df)
 
+    total_population = ages_df['Total Foot Traffic'].sum()
+    # adding Traffic Score to stores_df
+    create_traffic_score(stores_df, total_population)
 
     chain_df = store_chain_summary_df(stores_df)
     ages_df.set_index('Age range', inplace=True)
+    eating_places_df = create_eating_places_df(stores_df)
     stores_df.set_index('Chain', inplace=True)
+    restaurant_type_df = restaurant_type_summary_df(eating_places_df)
+    eating_places_df.set_index("Chain", inplace=True)
 
-    return [ages_df, chain_df, stores_df]
+    return [ages_df, chain_df, stores_df, eating_places_df, restaurant_type_df]
 
 
 def named_range_to_list(excel_dest, wb):
@@ -160,7 +178,7 @@ def potential_sales_df(stores_df, chain_df):
 
     Look at Stores sorted by each Chain Category and look at the top 10% of them (rounded).
     Iterate through each of those and check their Customer_Buy_% with their categories average.
-    If their Buy_% is lower then find the difference and multiply their 'Total Customers' by that % difference.
+    If their Buy_% is lower then find the difference and multiply their 'Total Foot Traffic' by that % difference.
 
 
     :param stores_df:
@@ -192,7 +210,7 @@ def potential_sales_df(stores_df, chain_df):
             store_buy_average = row['Customer_Buy_%']
             if store_buy_average < category_buy_average:
                 value_below_average = round(category_buy_average - store_buy_average, 3)
-                potential_additional_sales = round(value_below_average * row['Total Customers'])
+                potential_additional_sales = round(value_below_average * row['Total Foot Traffic'])
 
                 row_dict['Chain'] = row['Chain']
                 row_dict['Inter-Category Rank'] = index + 1
@@ -209,3 +227,61 @@ def potential_sales_df(stores_df, chain_df):
         pot_df = pd.DataFrame(store_rows).set_index('Chain')
 
     return pot_df
+
+
+def create_eating_places_df(df):
+    """
+    Take stores df and then grab df with just Eating Places.
+    Iterate through and classify each as QSR, Full Service or Other
+    return df
+
+    :param df:
+    :return:
+    """
+
+    eating_places_df = df[df['Chain Category']=='Eating Places']
+
+    # Changing % of Total Foot Traffic to within category
+    eating_places_df.drop('% of Total Sales', axis=1, inplace=True)
+    eating_places_df.drop('% of Total Foot Traffic', axis=1, inplace=True)
+
+    eating_places_df['% of Total Sales within Eating Places'] = round(eating_places_df['Customers'] / eating_places_df['Customers'].sum(),4)
+    eating_places_df['% of Total Foot Traffic within Eating Places'] = round(
+        eating_places_df['Total Foot Traffic'] / eating_places_df['Total Foot Traffic'].sum(), 4)
+
+    current_file_directory = os.path.dirname(__file__)
+
+    qsr_fullservice_list_FP = os.path.join(current_file_directory, 'qsr_fullservice_list.json')
+    with open(qsr_fullservice_list_FP) as json_data:
+        qsr_fullservice_dict = json.load(json_data)
+        json_data.close()
+
+        qsr_fullservice_dict['qsr'] = set(qsr_fullservice_dict['qsr'])
+        qsr_fullservice_dict['full_service'] = set(qsr_fullservice_dict['full_service'])
+
+    eating_places_df['Restaurant Type'] = eating_places_df.apply(lambda x: restaurant_classifier(x['Chain'], qsr_fullservice_dict), axis=1)
+
+
+    return eating_places_df
+
+
+def restaurant_classifier(chain, qsr_fullservice_dict):
+    if chain in qsr_fullservice_dict['qsr']:
+        return 'QSR'
+    if chain in qsr_fullservice_dict['full_service']:
+        return 'Full Service Restaurant'
+    return 'Other'
+
+
+def restaurant_type_summary_df(eating_places_df):
+    alt_stores = pd.DataFrame(eating_places_df)
+
+    by_type = alt_stores.groupby(['Restaurant Type'])
+    agg_type = by_type.agg(
+        {"Customers": 'sum', "Customer_Buy_%": 'mean', "Traffic Score": 'mean', "Chain": "count",
+         "% of Total Foot Traffic within Eating Places" : 'sum', '% of Total Sales within Eating Places': 'sum'})
+
+    agg_type['Customer_Buy_%'] = round(agg_type['Customer_Buy_%'], 4)
+    agg_type = agg_type.rename(columns={'Chain': '# of Restaurants', 'Customer_Buy_%': 'Average Customer Buy %', 'Traffic Score': 'Average Traffic Score'})
+
+    return agg_type

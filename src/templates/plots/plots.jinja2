@@ -4,6 +4,9 @@
         <h1>Data Insights {{filename}} <small>Analytics on Children's Electrolyte drink sales.</small></h1>
         <p>This was an exercise in developing a custom web application for inMarket that processes a specifically formatted Excel or Google Sheet.<br>
         A key metric used in this analysis is <b>Customer Buy %</b>. This metric represents the proportion of visitors to a store who made a product purchase.</p>
+        <p>An additional key metric is the <b>Traffic Score</b>. This is calculated as the Total Customer Traffic divided by total unique customers. Total unique
+        customers was inferred from the Age Range table as it is unlikely that an individual was counted there twice.</p>
+        <p>The graph plots are semi-interactive and allow the user to click data points grouped according to the legend on or off.</p>
     </div>
 
     <div class="insight-spacing">
@@ -32,7 +35,6 @@
     <div class="insight-spacing">
         <h3><b>Store Insights</b></h3>
         <hr />
-        <p align="center"><i><b>The size of the dots represents the % of the Total Population.</b></i></p>
         <div class="container" align="center">
             <embed type="image/svg+xml" src={{store_graph | safe}} style="max-width:1200px"/>
         </div>
@@ -46,6 +48,31 @@
         by <b>{{ total_potential_customers }}</b></p>
         <hr />
         {{ potential_sales.to_html(classes='table table-striped" id="data_table4' | safe) }}
+
+    </div>
+
+    <div class="insight-spacing">
+        <h3><b>Eating Places grouped by Restaurant Type</b></h3>
+        <hr />
+        <p align="center"><i><b>The size of the dots represents the # of Stores of that type.</b></i></p>
+        <div class="container" align="center">
+            <embed type="image/svg+xml" src={{restaurant_summary_graph | safe}} style="max-width:1200px"/>
+        </div>
+        <p>Data from Wikipedia was scraped to help determine types of Eating Places which are summarized below.</p>
+        <hr />
+        {{ restaurant_type_df.to_html(classes='table table-striped" id="data_table5' | safe) }}
+
+    </div>
+
+    <div class="insight-spacing">
+        <h3><b>Eating Places</b></h3>
+       <hr />
+
+        <div class="container" align="center">
+            <embed type="image/svg+xml" src={{restaurants_graph | safe}} style="max-width:1200px"/>
+        </div>
+        <hr />
+        {{ eating_places_df.to_html(classes='table table-striped" id="data_table6' | safe) }}
 
     </div>
 

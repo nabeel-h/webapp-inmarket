@@ -6,23 +6,37 @@
         <ul>-The Stores Visited and Age Range tables need to have valid and complete data with the appropriate expected columns.</ul>
         <ul>-The cell ranges need to be specified with following Named Ranges: <b>'Stores_Visited'</b> and <b>'Age_Range'</b>(e.g. Stores_Visited as a Namedrange specifying the range A5:D58)</ul>
         <ul>-All Excel Tables need to be converted into range cells.</ul>
+        <ul>-Currently the Google Sheets functionality only works when the application is run on a local machine due to current implementation handling Google's oauth system.</ul>
+        <ul>If you do not have an Excel file on hand please <b>CLICK ON THE DEMO BUTTON BELOW</b>. This will run a copy of the Data Challenge #1 file that is stored on the server.</ul>
         <div class="form-size">
         <form action="{{ url_for('plots.create_gplots') }}"  method="post">
             <div class="form-group">
                 <label for="url">Google Sheets URL</label>
-                <input type="text" class="form-control" id="url" name="url" placeholder="Google Sheets URL"
+                <input type="text" class="form-control" id="url" name="url" placeholder="Enter Google Sheets URL">
             </div>
             <button type="submit" class="btn btn-success">Submit</button>
         </form>
         </div>
 
+        <form action="{{ url_for('plots.create_eplots') }}" method=post enctype=multipart/form-data>
         <div class="form-group">
         <p>Or upload an Excel file:</p>
-        <form action="{{ url_for('plots.create_eplots') }}" method=post enctype=multipart/form-data>
             <input type=file name=file>
             <input type=submit value=Upload>
-        </form>
         </div>
+        </form>
+
+
+        <hr />
+
+        <p>Or run demo below for Data Challenge #1 file already stored on the server.</p>
+        <form action="{{ url_for('plots.create_static') }}" method='post'>
+        <div class="form-group">
+            <input type="submit" value="DEMO" class="btn btn-danger">
+        </div>
+        </form>
+
+        <p>Source code can be found here :- https://github.com/nabeel-h/webapp-inmarket</p>
 
     </div>
 
