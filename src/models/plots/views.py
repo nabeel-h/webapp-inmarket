@@ -16,6 +16,7 @@ ALLOWED_EXTENSIONS = set(['xlsx'])
 
 @plot_blueprint.route('/g_plots', methods=['POST', 'GET'])
 def create_gplots():
+    '''
     if request.method == 'POST':
         spreadsheet_url = request.form['url']
 
@@ -51,6 +52,7 @@ def create_gplots():
 
         flash(u'Your URL was not a valid Sheets Spreadsheet URL. Please try again.', 'error')
         return redirect("/")
+        '''
     return render_template("home.jinja2")
 
 @plot_blueprint.route('/e_plots', methods=['POST','GET'])
